@@ -16,10 +16,26 @@ export default function UploadSection() {
         formData.append("files", file);
       });
 
-      await fetch("/api/contracts/upload", {
+      const res = await fetch("/api/contracts/upload", {
         method: "POST",
         body: formData,
       });
+
+      const data = await res.json();
+
+      for (const contract of data.contracts) {
+        await fetch("/api/contracts/process", {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            contractId: contract._id,
+          }),
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {
