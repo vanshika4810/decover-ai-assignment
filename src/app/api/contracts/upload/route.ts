@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db/mongodb";
 import Contract from "@/models/Contract";
+import { processContractChunks } from "@/lib/chunking/process-contract";
 
 import { parsePDF } from "@/lib/parsers/pdf";
 import mammoth from "mammoth";
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
         fileName: file.name,
         rawText,
       });
+
+      await processContractChunks(contract._id.toString(), rawText);
 
       uploadedContracts.push(contract);
     }

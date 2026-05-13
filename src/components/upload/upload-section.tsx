@@ -23,7 +23,14 @@ export default function UploadSection() {
 
       const data = await res.json();
 
-      for (const contract of data.contracts) {
+      console.log(data);
+
+      if (!data.success) {
+        console.error(data);
+        return;
+      }
+
+      for (const contract of data.contracts || []) {
         await fetch("/api/contracts/process", {
           method: "POST",
 

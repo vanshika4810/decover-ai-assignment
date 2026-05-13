@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     await contract.save();
 
-    const result = await extractClauses(contract.rawText);
+    const result = await extractClauses(contract._id.toString());
 
     for (const clause of result.clauses) {
       await Clause.create({
