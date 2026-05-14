@@ -238,7 +238,8 @@ export default function QueryBox({
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Contract Query</h2>
         <p className="text-sm text-muted-foreground">
-          Ask questions across all contracts, or select specific ones below.
+          Ask questions across all contracts, select specific ones from the list
+          below, or attach new files in the query box.
         </p>
       </div>
 
