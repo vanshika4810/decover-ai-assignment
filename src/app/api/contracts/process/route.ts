@@ -23,8 +23,10 @@ export async function POST(req: Request) {
     }
 
     contract.status = "processing";
-
     await contract.save();
+
+    // Remove any previously extracted clauses before re-processing
+    await Clause.deleteMany({ contractId: contract._id });
 
     const result = await extractClauses(contract._id.toString());
 

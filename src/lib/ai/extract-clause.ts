@@ -5,13 +5,14 @@ import { CLAUSE_TYPES } from "@/constants/clauses";
 import { retrieveRelevantChunks } from "./retrieve-chunks";
 
 export async function extractClauses(contractId: string) {
-  const contexts: Record<string, string> = {};
+  const entries = await Promise.all(
+    CLAUSE_TYPES.map(async (clauseType) => {
+      const chunks = await retrieveRelevantChunks(contractId, clauseType);
+      return [clauseType, chunks.map((chunk: any) => chunk.text).join("\n\n")] as const;
+    }),
+  );
 
-  for (const clauseType of CLAUSE_TYPES) {
-    const chunks = await retrieveRelevantChunks(contractId, clauseType);
-
-    contexts[clauseType] = chunks.map((chunk: any) => chunk.text).join("\n\n");
-  }
+  const contexts: Record<string, string> = Object.fromEntries(entries);
 
   const prompt = `
 You are a legal contract analysis AI.
@@ -70,8 +71,6 @@ ${JSON.stringify(contexts, null, 2)}
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
-
-  console.log(cleaned);
 
   return JSON.parse(cleaned);
 }
