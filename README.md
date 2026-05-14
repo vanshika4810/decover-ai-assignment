@@ -56,13 +56,13 @@ Each non-empty cell shows:
 
 **Classification badges**
 
-| Badge           | Meaning                                                                                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 🔴 **Risk**     | Non-standard, unfavorable, or high-risk terms - e.g. uncapped liability, one-sided indemnification, aggressive IP assignment     |
-| 🔵 **Standard** | Market-standard clause with no unusual concerns                                                                                  |
-| 🟡 **Key Term** | Materially important clause worth attention - e.g. key payment milestones, significant IP ownership, data processing obligations |
-| 🟢 **Found**    | Clause is present (legacy contracts processed before classification was introduced)                                              |
-| -               | Clause not found in this contract                                                                                                |
+| Badge        | Meaning                                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Risk**     | Non-standard, unfavorable, or high-risk terms - e.g. uncapped liability, one-sided indemnification, aggressive IP assignment     |
+| **Standard** | Market-standard clause with no unusual concerns                                                                                  |
+| **Key Term** | Materially important clause worth attention - e.g. key payment milestones, significant IP ownership, data processing obligations |
+| **Found**    | Clause is present (legacy contracts processed before classification was introduced)                                              |
+| -            | Clause not found in this contract                                                                                                |
 
 **Query results view**
 
