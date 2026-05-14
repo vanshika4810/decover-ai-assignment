@@ -3,6 +3,8 @@ import { connectDB } from "@/lib/db/mongodb";
 import Clause from "@/models/Clause";
 import Contract from "@/models/Contract";
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   try {
     await connectDB();

@@ -5,6 +5,8 @@ import Clause from "@/models/Clause";
 import Contract from "@/models/Contract";
 import { model } from "@/lib/ai/gemini";
 
+export const maxDuration = 60;
+
 function parseRetryAfterSeconds(
   details: GoogleGenerativeAIFetchError["errorDetails"],
 ): number | undefined {

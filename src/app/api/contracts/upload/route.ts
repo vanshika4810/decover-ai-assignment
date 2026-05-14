@@ -2,6 +2,8 @@ import { connectDB } from "@/lib/db/mongodb";
 import Contract from "@/models/Contract";
 import { processContractChunks } from "@/lib/chunking/process-contract";
 
+export const maxDuration = 60;
+
 import { parsePDF } from "@/lib/parsers/pdf";
 import mammoth from "mammoth";
 
