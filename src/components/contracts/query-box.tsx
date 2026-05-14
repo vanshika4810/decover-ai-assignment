@@ -2,18 +2,28 @@
 
 import { useState } from "react";
 
-export default function QueryBox() {
+interface Props {
+  onAnswer?: (
+    answer: string,
+    relevantFileNames: string[],
+    relevantClauseTypes: string[],
+  ) => void;
+  onClear?: () => void;
+}
+
+export default function QueryBox({ onAnswer, onClear }: Props) {
   const [query, setQuery] = useState("");
 
   const [loading, setLoading] = useState(false);
 
-  const [answer, setAnswer] = useState("");
+  const [error, setError] = useState("");
 
   async function handleQuery() {
+    if (!query.trim()) return;
+
     try {
       setLoading(true);
-
-      setAnswer("");
+      setError("");
 
       const res = await fetch("/api/query", {
         method: "POST",
@@ -29,12 +39,37 @@ export default function QueryBox() {
 
       const data = await res.json();
 
-      setAnswer(data.answer);
-    } catch (error) {
-      console.error(error);
+      if (!res.ok || data.success === false) {
+        let message =
+          typeof data.error === "string"
+            ? data.error
+            : "The query could not be completed.";
+        if (
+          typeof data.retryAfterSeconds === "number" &&
+          data.retryAfterSeconds > 0
+        ) {
+          message += ` Try again in about ${data.retryAfterSeconds} seconds.`;
+        }
+        setError(message);
+        onClear?.();
+        return;
+      }
+
+      onAnswer?.(
+        data.answer ?? "",
+        data.relevantFileNames ?? [],
+        data.relevantClauseTypes ?? [],
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Network error. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") handleQuery();
   }
 
   return (
@@ -51,22 +86,23 @@ export default function QueryBox() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Ask about clauses, risks, obligations..."
           className="flex-1 rounded-md border px-3 py-2 text-sm"
         />
 
         <button
           onClick={handleQuery}
-          disabled={loading}
-          className="rounded-md bg-black px-4 py-2 text-sm text-white"
+          disabled={loading || !query.trim()}
+          className="rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
         >
           {loading ? "Thinking..." : "Ask AI"}
         </button>
       </div>
 
-      {answer && (
-        <div className="rounded-lg bg-muted p-4 text-sm whitespace-pre-wrap">
-          {answer}
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
         </div>
       )}
     </div>

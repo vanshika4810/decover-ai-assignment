@@ -1,7 +1,22 @@
+import { GoogleGenerativeAIFetchError } from "@google/generative-ai";
+
 import { connectDB } from "@/lib/db/mongodb";
 import Clause from "@/models/Clause";
 import Contract from "@/models/Contract";
 import { model } from "@/lib/ai/gemini";
+
+function parseRetryAfterSeconds(
+  details: GoogleGenerativeAIFetchError["errorDetails"],
+): number | undefined {
+  if (!details?.length) return undefined;
+  for (const d of details) {
+    if (d["@type"]?.includes("RetryInfo") && typeof d.retryDelay === "string") {
+      const match = /^([\d.]+)s$/.exec(d.retryDelay.trim());
+      if (match) return Math.ceil(Number(match[1]));
+    }
+  }
+  return undefined;
+}
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +35,7 @@ export async function POST(req: Request) {
         }).lean();
 
         return {
-          fileName: contract.fileNAme,
+          fileName: contract.fileName,
           clauses,
         };
       }),
@@ -29,7 +44,7 @@ export async function POST(req: Request) {
     const prompt = `
             You are an AI legal assistant.
 
-            Answer the user's query based on the contracts data.
+            Answer the user's query based on the contracts data below.
 
             User Query:
             ${query}
@@ -39,9 +54,23 @@ export async function POST(req: Request) {
 
             Rules:
             - Be concise
-            - Mention relevant contract names
+            - Mention relevant contract file names
             - Explain reasoning
             - If no answer found, say so
+
+            The available clause types are:
+            "Intellectual Property Ownership", "Limitation of Liability", "Warranty Disclaimer",
+            "Indemnification", "Data Processing Terms", "Termination for Convenience",
+            "Non-Solicitation", "Payment Terms", "Confidentiality"
+
+            Return ONLY a valid JSON object (no markdown, no code blocks) in this exact structure:
+            {
+              "answer": "your detailed answer here",
+              "relevantFileNames": ["file1.pdf", "file2.pdf"],
+              "relevantClauseTypes": ["Confidentiality", "Payment Terms"]
+            }
+            - relevantFileNames: only file names from the contracts data directly relevant to the answer. Empty array if none.
+            - relevantClauseTypes: only clause type names from the list above that are directly relevant to the query. Empty array if none.
         `;
 
     const result = await model.generateContent(prompt);
@@ -50,16 +79,61 @@ export async function POST(req: Request) {
 
     const text = response.text();
 
+    let answer = text;
+    let relevantFileNames: string[] = [];
+    let relevantClauseTypes: string[] = [];
+
+    try {
+      const parsed = JSON.parse(text.trim());
+      answer = parsed.answer ?? text;
+      relevantFileNames = Array.isArray(parsed.relevantFileNames)
+        ? parsed.relevantFileNames
+        : [];
+      relevantClauseTypes = Array.isArray(parsed.relevantClauseTypes)
+        ? parsed.relevantClauseTypes
+        : [];
+    } catch {
+      answer = text;
+    }
+
     return Response.json({
       success: true,
-      answer: text,
+      answer,
+      relevantFileNames,
+      relevantClauseTypes,
     });
   } catch (error) {
     console.error(error);
 
+    if (error instanceof GoogleGenerativeAIFetchError) {
+      const status = error.status ?? 500;
+
+      if (status === 429) {
+        const retryAfter = parseRetryAfterSeconds(error.errorDetails);
+        return Response.json(
+          {
+            success: false,
+            error:
+              "Gemini API quota or rate limit reached (free tier is limited). Try again later, enable billing for higher limits, or switch model in configuration.",
+            retryAfterSeconds: retryAfter,
+          },
+          { status: 429 },
+        );
+      }
+
+      return Response.json(
+        {
+          success: false,
+          error: error.message || "The AI service returned an error.",
+        },
+        { status: status >= 400 && status < 600 ? status : 502 },
+      );
+    }
+
     return Response.json(
       {
         success: false,
+        error: "Something went wrong while processing your query.",
       },
       {
         status: 500,

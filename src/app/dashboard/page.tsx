@@ -1,6 +1,5 @@
 import UploadSection from "@/components/upload/upload-section";
-import ContractsTable from "@/components/contracts/contracts-table";
-import QueryBox from "@/components/contracts/query-box";
+import ContractsSection from "@/components/contracts/contracts-section";
 
 async function getContracts() {
   const res = await fetch("http://localhost:3000/api/contracts", {
@@ -28,9 +27,7 @@ export default async function DashboardPage() {
 
         <UploadSection />
 
-        <QueryBox />
-
-        <ContractsTable contracts={contracts} />
+        <ContractsSection contracts={contracts} />
       </div>
     </main>
   );
