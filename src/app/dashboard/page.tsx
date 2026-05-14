@@ -1,7 +1,7 @@
 import DashboardView from "@/components/dashboard/dashboard-view";
 
 async function getContracts() {
-  const res = await fetch("http://localhost:3000/api/contracts", {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contracts`, {
     cache: "no-store",
   });
 
