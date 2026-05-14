@@ -84,6 +84,10 @@ function StatusChip({ status }: { status: FileStatus }) {
       label: "Error",
       className: "bg-red-100 text-red-700",
     },
+    duplicate: {
+      label: "Already exists",
+      className: "bg-orange-100 text-orange-700",
+    },
   };
 
   const { label, className } = map[status];
@@ -95,18 +99,32 @@ function StatusChip({ status }: { status: FileStatus }) {
   );
 }
 
-export default function UploadSection({ onUploadComplete }: Props) {
+export default function UploadSection({ onUploadComplete, existingFileNames = [] }: Props) {
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newEntries: StagedFile[] = acceptedFiles.map((file) => ({
-      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
-      file,
-      status: "queued",
-    }));
-    setStagedFiles((prev) => [...prev, ...newEntries]);
-  }, []);
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      setStagedFiles((prev) => {
+        const alreadyStagedNames = new Set(prev.map((f) => f.file.name));
+        const newEntries: StagedFile[] = acceptedFiles.map((file) => {
+          const isDuplicate =
+            existingFileNames.includes(file.name) ||
+            alreadyStagedNames.has(file.name);
+          return {
+            id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+            file,
+            status: isDuplicate ? "duplicate" : "queued",
+            errorMsg: isDuplicate
+              ? "A contract with this file name already exists."
+              : undefined,
+          };
+        });
+        return [...prev, ...newEntries];
+      });
+    },
+    [existingFileNames],
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     multiple: true,
@@ -256,14 +274,18 @@ export default function UploadSection({ onUploadComplete }: Props) {
                   <p className="text-xs text-muted-foreground">
                     {formatBytes(entry.file.size)}
                   </p>
-                  {entry.errorMsg && (
+                  {entry.errorMsg && entry.status === "error" && (
                     <p className="text-xs text-red-600">{entry.errorMsg}</p>
                   )}
                 </div>
 
                 <StatusChip status={entry.status} />
 
-                {(entry.status === "queued" || entry.status === "error") && (
+                {entry.errorMsg && entry.status === "duplicate" && (
+                  <p className="text-xs text-orange-600 max-w-[140px] text-right">{entry.errorMsg}</p>
+                )}
+
+                {(entry.status === "queued" || entry.status === "error" || entry.status === "duplicate") && (
                   <button
                     onClick={() => removeFile(entry.id)}
                     className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"

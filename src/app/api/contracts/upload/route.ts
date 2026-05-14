@@ -35,6 +35,11 @@ export async function POST(req: Request) {
         rawText = result.value;
       }
 
+      const existing = await Contract.findOne({ fileName: file.name }).lean();
+      if (existing) {
+        continue;
+      }
+
       const contract = await Contract.create({
         fileName: file.name,
         rawText,

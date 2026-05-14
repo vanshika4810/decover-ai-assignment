@@ -34,12 +34,13 @@ export async function POST(req: Request) {
       inlineContracts?: { fileName: string; rawText: string }[];
     } = body;
 
-    const filter =
-      Array.isArray(contractIds) && contractIds.length > 0
-        ? { _id: { $in: contractIds } }
-        : {};
-
-    const contracts = await Contract.find(filter).lean();
+    // undefined → all contracts; [] → none; [...ids] → specific ones
+    let contracts: any[] = [];
+    if (!Array.isArray(contractIds)) {
+      contracts = await Contract.find({}).lean();
+    } else if (contractIds.length > 0) {
+      contracts = await Contract.find({ _id: { $in: contractIds } }).lean();
+    }
 
     const enrichedContracts = await Promise.all(
       contracts.map(async (contract: any) => {
@@ -94,10 +95,15 @@ export async function POST(req: Request) {
             {
               "answer": "your detailed answer here",
               "relevantFileNames": ["file1.pdf", "file2.pdf"],
-              "relevantClauseTypes": ["Confidentiality", "Payment Terms"]
+              "relevantClauseTypes": ["Confidentiality", "Payment Terms"],
+              "contractExplanations": {
+                "file1.pdf": "One or two sentence explanation of why this contract is relevant to the query.",
+                "file2.pdf": "One or two sentence explanation of why this contract is relevant to the query."
+              }
             }
             - relevantFileNames: only file names from the contracts data directly relevant to the answer. Empty array if none.
             - relevantClauseTypes: only clause type names from the list above that are directly relevant to the query. Empty array if none.
+            - contractExplanations: a key for every file in relevantFileNames, with a concise explanation (1-2 sentences) of why that specific contract is relevant to the query.
         `;
 
     const result = await model.generateContent(prompt);
@@ -109,6 +115,7 @@ export async function POST(req: Request) {
     let answer = text;
     let relevantFileNames: string[] = [];
     let relevantClauseTypes: string[] = [];
+    let contractExplanations: Record<string, string> = {};
 
     try {
       const parsed = JSON.parse(text.trim());
@@ -119,6 +126,11 @@ export async function POST(req: Request) {
       relevantClauseTypes = Array.isArray(parsed.relevantClauseTypes)
         ? parsed.relevantClauseTypes
         : [];
+      contractExplanations =
+        parsed.contractExplanations &&
+        typeof parsed.contractExplanations === "object"
+          ? parsed.contractExplanations
+          : {};
     } catch {
       answer = text;
     }
@@ -128,6 +140,7 @@ export async function POST(req: Request) {
       answer,
       relevantFileNames,
       relevantClauseTypes,
+      contractExplanations,
     });
   } catch (error) {
     console.error(error);

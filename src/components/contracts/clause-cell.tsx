@@ -35,15 +35,23 @@ const BADGE_CONFIG: Record<
 function ClassificationBadge({
   classification,
 }: {
-  classification: ClauseClassification;
+  classification: ClauseClassification | undefined;
 }) {
-  if (!classification || !BADGE_CONFIG[classification]) return null;
-  const { label, className } = BADGE_CONFIG[classification];
+  if (classification && BADGE_CONFIG[classification]) {
+    const { label, className } = BADGE_CONFIG[classification];
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
+      >
+        {label}
+      </span>
+    );
+  }
+
+  // Fallback for contracts processed before classification was added
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
-    >
-      {label}
+    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+      Found
     </span>
   );
 }
@@ -52,7 +60,7 @@ export default function ClauseCell({ clause }: Props) {
   const [open, setOpen] = useState(false);
 
   if (!clause || !clause.found) {
-    return <div className="text-sm text-muted-foreground">—</div>;
+    return <div className="text-sm text-muted-foreground">Not found</div>;
   }
 
   return (
@@ -77,13 +85,6 @@ export default function ClauseCell({ clause }: Props) {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium">Confidence</p>
-              <p className="text-sm text-muted-foreground">
-                {Math.round(clause.confidence * 100)}%
-              </p>
-            </div>
-
             <div>
               <p className="text-sm font-medium">Summary</p>
               <p className="text-sm text-muted-foreground">{clause.summary}</p>

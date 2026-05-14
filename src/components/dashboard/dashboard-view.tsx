@@ -79,7 +79,10 @@ export default function DashboardView({ initialContracts }: Props) {
             <DialogTitle>Upload Contracts</DialogTitle>
           </DialogHeader>
 
-          <UploadSection onUploadComplete={handleUploadComplete} />
+          <UploadSection
+            onUploadComplete={handleUploadComplete}
+            existingFileNames={contracts.map((c) => c.fileName)}
+          />
         </DialogContent>
       </Dialog>
 
@@ -109,7 +112,7 @@ export default function DashboardView({ initialContracts }: Props) {
           </div>
         )}
 
-        <ContractsSection contracts={contracts} />
+        <ContractsSection contracts={contracts} onRefresh={refresh} />
       </div>
     </div>
   );

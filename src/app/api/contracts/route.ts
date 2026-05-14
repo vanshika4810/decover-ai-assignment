@@ -7,8 +7,15 @@ export async function DELETE(req: Request) {
   try {
     await connectDB();
 
-    const { contractId } = await req.json();
+    const body = await req.json();
 
+    if (body.deleteAll) {
+      await Clause.deleteMany({});
+      await Contract.deleteMany({});
+      return Response.json({ success: true });
+    }
+
+    const { contractId } = body;
     if (!contractId) {
       return Response.json(
         { success: false, error: "contractId is required" },
@@ -18,6 +25,30 @@ export async function DELETE(req: Request) {
 
     await Clause.deleteMany({ contractId });
     await Contract.findByIdAndDelete(contractId);
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return Response.json({ success: false }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    await connectDB();
+
+    const { contractId, fileName } = await req.json();
+
+    if (!contractId || !fileName?.trim()) {
+      return Response.json(
+        { success: false, error: "contractId and fileName are required" },
+        { status: 400 },
+      );
+    }
+
+    await Contract.findByIdAndUpdate(contractId, {
+      fileName: fileName.trim(),
+    });
 
     return Response.json({ success: true });
   } catch (error) {
