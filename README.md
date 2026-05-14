@@ -46,16 +46,6 @@ The contracts table is the primary interface for reviewing and comparing extract
 
 Each row is a contract. Each column is a clause type. Cells are filled by the AI after processing.
 
-```
-┌─────────────────────┬───────────┬──────────────────┬─────────────────────┬─────────────────────┐
-│ Contract            │ Status    │ Confidentiality  │ Payment Terms       │ Indemnification     │
-├─────────────────────┼───────────┼──────────────────┼─────────────────────┼─────────────────────┤
-│ service-agreement   │ Completed │ 🔴 Risk          │ 🟡 Key Term         │ 🟢 Found            │
-│ nda-template        │ Completed │ 🔵 Standard      │ Not found           │ 🔵 Standard         │
-│ vendor-contract     │ Uploaded  │ ▶ Complete proc. │ -                   │ -                   │
-└─────────────────────┴───────────┴──────────────────┴─────────────────────┴─────────────────────┘
-```
-
 **Clause cells**
 
 Each non-empty cell shows:
