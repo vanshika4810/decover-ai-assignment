@@ -99,13 +99,18 @@ export async function POST(req: Request) {
               "relevantFileNames": ["file1.pdf", "file2.pdf"],
               "relevantClauseTypes": ["Confidentiality", "Payment Terms"],
               "contractExplanations": {
-                "file1.pdf": "One or two sentence explanation of why this contract is relevant to the query.",
-                "file2.pdf": "One or two sentence explanation of why this contract is relevant to the query."
+                "file1.pdf": "Detailed explanation referencing specific clauses, obligations, risks, and how it answers the query.",
+                "file2.pdf": "Detailed explanation referencing specific clauses, obligations, risks, and how it answers the query."
               }
             }
             - relevantFileNames: only file names from the contracts data directly relevant to the answer. Empty array if none.
             - relevantClauseTypes: only clause type names from the list above that are directly relevant to the query. Empty array if none.
-            - contractExplanations: a key for every file in relevantFileNames, with a concise explanation (1-2 sentences) of why that specific contract is relevant to the query.
+            - contractExplanations: a key for every file in relevantFileNames. For each contract write a detailed explanation (3-5 sentences) covering:
+              (a) which specific clauses or sections make it relevant,
+              (b) what the clause actually says or obligates,
+              (c) any risks, gaps, or notable terms found,
+              (d) how it directly answers the user's query.
+              Be specific — reference actual clause text, party names, obligations, or thresholds where available.
         `;
 
     const result = await model.generateContent(prompt);

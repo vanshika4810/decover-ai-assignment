@@ -48,6 +48,15 @@ export default function ContractsTable({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [expandedExplanations, setExpandedExplanations] = useState<Set<string>>(new Set());
+
+  function toggleExplanation(fileName: string) {
+    setExpandedExplanations((prev) => {
+      const next = new Set(prev);
+      next.has(fileName) ? next.delete(fileName) : next.add(fileName);
+      return next;
+    });
+  }
 
   async function handleProcess(contractId: string) {
     setProcessingIds((prev) => new Set(prev).add(contractId));
@@ -166,8 +175,8 @@ export default function ContractsTable({
                 Contract Name
               </th>
               {!showDelete && (
-                <th className="min-w-[240px] p-4 text-left text-sm font-medium">
-                  Why shown
+                <th className="min-w-[280px] p-4 text-left text-sm font-medium">
+                  Relevance to Query
                 </th>
               )}
               {showDelete && (
@@ -294,15 +303,33 @@ export default function ContractsTable({
                 </td>
 
                 {!showDelete && (
-                  <td className="p-4">
+                  <td className="p-4 max-w-[320px]">
                     {contractExplanations[contract.fileName] ? (
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {contractExplanations[contract.fileName]}
-                      </p>
+                      (() => {
+                        const text = contractExplanations[contract.fileName];
+                        const isExpanded = expandedExplanations.has(contract.fileName);
+                        const LIMIT = 160;
+                        const isLong = text.length > LIMIT;
+                        return (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {isExpanded || !isLong
+                                ? text
+                                : `${text.slice(0, LIMIT).trimEnd()}…`}
+                            </p>
+                            {isLong && (
+                              <button
+                                onClick={() => toggleExplanation(contract.fileName)}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                              >
+                                {isExpanded ? "Show less" : "Read more"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">
-                        —
-                      </span>
+                      <span className="text-xs text-muted-foreground/50">—</span>
                     )}
                   </td>
                 )}

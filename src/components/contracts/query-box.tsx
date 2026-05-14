@@ -31,6 +31,11 @@ export default function QueryBox({
   const [loadingStep, setLoadingStep] = useState("");
   const [error, setError] = useState("");
   const [hasResult, setHasResult] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  function handleStop() {
+    abortControllerRef.current?.abort();
+  }
 
   // existing contracts selected for filtering
   // includeAll=false + selectedIds=[] means no pre-existing contracts (default)
@@ -91,6 +96,10 @@ export default function QueryBox({
   async function handleQuery() {
     if (!query.trim()) return;
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
+
     try {
       setLoading(true);
       setError("");
@@ -108,6 +117,7 @@ export default function QueryBox({
         const uploadRes = await fetch("/api/contracts/upload", {
           method: "POST",
           body: formData,
+          signal,
         });
         const uploadData = await uploadRes.json();
 
@@ -138,6 +148,7 @@ export default function QueryBox({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contractId: id }),
+                signal,
               }),
             ),
           );
@@ -161,11 +172,12 @@ export default function QueryBox({
       }
 
       // Step 3: Run the AI query against stored contracts
-      setLoadingStep("Querying…");
+      setLoadingStep("Querying AI…");
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, contractIds: queryContractIds }),
+        signal,
       });
 
       const data = await res.json();
@@ -188,19 +200,24 @@ export default function QueryBox({
       }
 
       setHasResult(true);
-      // Refresh the contracts list so newly uploaded contracts appear in the table
       onRefresh?.();
-      // Pass empty answer to skip AI text; table is filtered by file/clause names
       onAnswer?.(
         "",
         data.relevantFileNames ?? [],
         data.relevantClauseTypes ?? [],
         data.contractExplanations ?? {},
       );
-    } catch (err) {
-      console.error(err);
-      setError("Network error. Check your connection and try again.");
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        // User cancelled — clear state silently
+        setHasResult(false);
+        onClear?.();
+      } else {
+        console.error(err);
+        setError("Network error. Check your connection and try again.");
+      }
     } finally {
+      abortControllerRef.current = null;
       setLoading(false);
       setLoadingStep("");
     }
@@ -219,7 +236,7 @@ export default function QueryBox({
   return (
     <div className="space-y-3 rounded-xl border p-6">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">AI Contract Query</h2>
+        <h2 className="text-lg font-semibold">Contract Query</h2>
         <p className="text-sm text-muted-foreground">
           Ask questions across all contracts, or select specific ones below.
         </p>
@@ -479,6 +496,22 @@ export default function QueryBox({
                 Clear
               </button>
             )}
+            {loading ? (
+              <button
+                onClick={handleStop}
+                className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
+              >
+                <svg
+                  className="h-3 w-3"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                </svg>
+                Stop
+              </button>
+            ) : null}
+
             <button
               onClick={handleQuery}
               disabled={loading || !query.trim()}
