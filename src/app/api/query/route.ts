@@ -24,9 +24,22 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const { query } = body;
+    const {
+      query,
+      contractIds,
+      inlineContracts,
+    }: {
+      query: string;
+      contractIds?: string[];
+      inlineContracts?: { fileName: string; rawText: string }[];
+    } = body;
 
-    const contracts = await Contract.find().lean();
+    const filter =
+      Array.isArray(contractIds) && contractIds.length > 0
+        ? { _id: { $in: contractIds } }
+        : {};
+
+    const contracts = await Contract.find(filter).lean();
 
     const enrichedContracts = await Promise.all(
       contracts.map(async (contract: any) => {
@@ -37,20 +50,34 @@ export async function POST(req: Request) {
         return {
           fileName: contract.fileName,
           clauses,
+          source: "stored",
         };
       }),
     );
+
+    // Append any ad-hoc files attached directly to the query (raw text, no clauses)
+    const allContracts = [
+      ...enrichedContracts,
+      ...(Array.isArray(inlineContracts) ? inlineContracts : []).map((ic) => ({
+        fileName: ic.fileName,
+        rawText: ic.rawText,
+        clauses: [],
+        source: "inline",
+      })),
+    ];
 
     const prompt = `
             You are an AI legal assistant.
 
             Answer the user's query based on the contracts data below.
+            Some contracts are "stored" (fully analysed with extracted clauses).
+            Some are "inline" (raw text only, attached directly by the user for this query).
 
             User Query:
             ${query}
 
             Contracts Data:
-            ${JSON.stringify(enrichedContracts)}
+            ${JSON.stringify(allContracts)}
 
             Rules:
             - Be concise

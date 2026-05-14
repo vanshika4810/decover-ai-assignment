@@ -27,6 +27,11 @@ const ClauseSchema = new Schema(
       type: Number,
       default: 0,
     },
+    classification: {
+      type: String,
+      enum: ["risk", "standard", "key_term", null],
+      default: null,
+    },
   },
   {
     timestamps: true,

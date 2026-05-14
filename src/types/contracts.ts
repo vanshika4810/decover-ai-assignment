@@ -1,3 +1,5 @@
+export type ClauseClassification = "risk" | "standard" | "key_term" | null;
+
 export interface Clause {
   clauseType: string;
 
@@ -8,6 +10,8 @@ export interface Clause {
   summary: string;
 
   confidence: number;
+
+  classification: ClauseClassification;
 }
 
 export interface Contract {

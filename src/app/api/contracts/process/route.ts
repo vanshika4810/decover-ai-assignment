@@ -31,16 +31,12 @@ export async function POST(req: Request) {
     for (const clause of result.clauses) {
       await Clause.create({
         contractId: contract._id,
-
         clauseType: clause.clauseType,
-
         found: clause.found,
-
         text: clause.text,
-
         summary: clause.summary,
-
         confidence: clause.confidence,
+        classification: clause.classification ?? null,
       });
     }
 

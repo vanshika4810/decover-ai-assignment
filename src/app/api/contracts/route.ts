@@ -3,6 +3,29 @@ import { connectDB } from "@/lib/db/mongodb";
 import Clause from "@/models/Clause";
 import Contract from "@/models/Contract";
 
+export async function DELETE(req: Request) {
+  try {
+    await connectDB();
+
+    const { contractId } = await req.json();
+
+    if (!contractId) {
+      return Response.json(
+        { success: false, error: "contractId is required" },
+        { status: 400 },
+      );
+    }
+
+    await Clause.deleteMany({ contractId });
+    await Contract.findByIdAndDelete(contractId);
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return Response.json({ success: false }, { status: 500 });
+  }
+}
+
 export async function GET() {
   try {
     await connectDB();

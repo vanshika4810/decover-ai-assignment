@@ -33,10 +33,16 @@ Return format:
       "found": true,
       "text": "",
       "summary": "",
-      "confidence": 0.92
+      "confidence": 0.92,
+      "classification": "standard"
     }
   ]
 }
+
+classification rules (apply only when found is true):
+- "risk"      — clause contains non-standard, unfavorable, or high-risk terms (e.g. uncapped liability, one-sided indemnification, aggressive IP assignment, no termination notice)
+- "standard"  — clause is market-standard / typical with no unusual concerns
+- "key_term"  — clause is present and materially important (e.g. key payment milestones, significant IP ownership, data processing obligations) but not inherently risky
 
 If clause not found:
 
@@ -45,7 +51,8 @@ If clause not found:
   "found": false,
   "text": "",
   "summary": "",
-  "confidence": 0
+  "confidence": 0,
+  "classification": null
 }
 
 Contexts:
